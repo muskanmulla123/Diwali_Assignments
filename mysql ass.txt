@@ -1,0 +1,181 @@
+mysql> CREATE TABLE department1 ( dept_id int primary key auto_increment,detp_name varchar(50));
+Query OK, 0 rows affected (0.03 sec)
+
+
+mysql> create table emp1(emp_id int primary key,emp_name varchar(50),dept_id int,salary decimal(10,2),jining_date date,foreign key (dept_id)references department1(dept_id));
+Query OK, 0 rows affected (0.06 sec)
+
+
+Q-1)Display top 5 highest salary earners in each dept
+
+mysql> SELECT e1.emp_id, e1.emp_name, e1.dept_id, e1.salary
+    -> FROM emp1 e1
+    -> WHERE (
+    ->     SELECT COUNT(*)
+    ->     FROM emp1 e2
+    ->     WHERE e2.dept_id = e1.dept_id
+    ->       AND e2.salary > e1.salary
+    -> ) < 5
+    -> ORDER BY e1.dept_id, e1.salary DESC;
++--------+----------+---------+----------+
+| emp_id | emp_name | dept_id | salary   |
++--------+----------+---------+----------+
+|     12 | Priya    |       1 | 70000.00 |
+|     11 | Ramesh   |       1 | 60000.00 |
+|      7 | Sana     |       2 | 98000.00 |
+|      6 | Tina     |       2 | 95000.00 |
+|      8 | Anil     |       2 | 74000.00 |
+|      2 | Sohail   |       3 | 92000.00 |
+|      3 | Riya     |       3 | 88000.00 |
+|      1 | Muskan   |       3 | 85000.00 |
+|      5 | Rahul    |       3 | 78000.00 |
+|      4 | Amit     |       3 | 70000.00 |
+|      9 | Nisha    |       4 | 90000.00 |
+|     10 | Karan    |       4 | 65000.00 |
+|     15 | Arjun    |       5 | 94000.00 |
+|     13 | Vikas    |       5 | 72000.00 |
+|     14 | Neha     |       5 | 68000.00 |
++--------+----------+---------+----------+
+15 rows in set (0.01 sec)
+
+
+Q2) Write a stored function getWorkingDays which accepts joining data and returns
+the no of working days
+Ans-
+
+mysql> CREATE FUNCTION getWorkingDays(joinDate DATE)
+    -> RETURNS INT
+    -> DETERMINISTIC
+    -> BEGIN
+    ->     DECLARE totalDays INT;
+    ->     DECLARE workingDays INT DEFAULT 0;
+    ->     DECLARE currentDate DATE;
+    ->
+    ->     -- Find total days between joining date and today
+    ->     SET totalDays = DATEDIFF(CURDATE(), joinDate);
+    ->     SET currentDate = joinDate;
+    ->
+    ->     -- Loop through all days and count only weekdays
+    ->     WHILE totalDays > 0 DO
+    ->         -- DAYOFWEEK() returns: Sunday=1, Monday=2, ..., Saturday=7
+    ->         IF DAYOFWEEK(currentDate) NOT IN (1,7) THEN
+    ->             SET workingDays = workingDays + 1;
+    ->         END IF;
+    ->
+    ->         -- Move to next day
+    ->         SET currentDate = DATE_ADD(currentDate, INTERVAL 1 DAY);
+    ->         SET totalDays = totalDays - 1;
+    ->     END WHILE;
+    ->
+    ->     RETURN workingDays;
+    -> END$$
+Query OK, 0 rows affected (0.11 sec)
+
+mysql>
+mysql> DELIMITER ;
+mysql> SELECT getWorkingDays('2024-01-01') AS working_days;
++--------------+
+| working_days |
++--------------+
+|          470 |
++--------------+
+1 row in set (0.02 sec)
+
+mysql> SELECT emp_id, emp_name, joining_date, getWorkingDays(joining_date) AS working_days
+    -> FROM emp1;
++--------+----------+--------------+--------------+
+| emp_id | emp_name | joining_date | working_days |
++--------+----------+--------------+--------------+
+|      1 | Muskan   | 2023-01-10   |          724 |
+|      2 | Sohail   | 2022-07-12   |          854 |
+|      3 | Riya     | 2024-02-15   |          437 |
+|      4 | Amit     | 2024-06-01   |          360 |
+|      5 | Rahul    | 2024-03-05   |          424 |
+|      6 | Tina     | 2021-05-22   |         1150 |
+|      7 | Sana     | 2022-09-17   |          805 |
+|      8 | Anil     | 2023-11-02   |          512 |
+|      9 | Nisha    | 2022-12-20   |          739 |
+|     10 | Karan    | 2024-01-14   |          460 |
+|     11 | Ramesh   | 2024-07-01   |          340 |
+|     12 | Priya    | 2023-08-12   |          570 |
+|     13 | Vikas    | 2022-10-01   |          795 |
+|     14 | Neha     | 2024-04-09   |          399 |
+|     15 | Arjun    | 2021-03-20   |         1195 |
++--------+----------+--------------+--------------+
+15 rows in set (0.06 sec)
+
+
+
+Q3)Write a stored procedure which updates the salary of a given emp based on no
+of working days. Give differential salary rise based on no of working days.
+
+Ans-
+mysql> CREATE PROCEDURE updateSalaryByWorkingDays(IN empId INT)
+    -> BEGIN
+    ->     DECLARE jDate DATE;
+    ->     DECLARE wDays INT;
+    ->     DECLARE currentSalary DECIMAL(10,2);
+    ->     DECLARE newSalary DECIMAL(10,2);
+    ->
+    ->     -- Get joining date and current salary of the employee
+    ->     SELECT joining_date, salary
+    ->     INTO jDate, currentSalary
+    ->     FROM emp1
+    ->     WHERE emp_id = empId;
+    ->
+    ->     -- Calculate total working days using your stored function
+    ->     SET wDays = getWorkingDays(jDate);
+    ->
+    ->     -- Apply differential salary rise
+    ->     IF wDays > 400 THEN
+    ->         SET newSalary = currentSalary * 1.20;   -- 20% rise
+    ->     ELSEIF wDays > 300 THEN
+    ->         SET newSalary = currentSalary * 1.15;   -- 15% rise
+    ->     ELSEIF wDays > 200 THEN
+    ->         SET newSalary = currentSalary * 1.10;   -- 10% rise
+    ->     ELSE
+    ->         SET newSalary = currentSalary * 1.05;   -- 5% rise
+    ->     END IF;
+    ->
+    ->     -- Update salary in table
+    ->     UPDATE emp1 SET salary = newSalary WHERE emp_id = empId;
+    ->
+    ->     -- Show the result
+    ->     SELECT emp_name, wDays AS working_days, currentSalary AS old_salary, newSalary AS updated_salary
+    ->     FROM emp1 WHERE emp_id = empId;
+    -> END$$
+Query OK, 0 rows affected (0.01 sec)
+
+mysql>
+mysql> DELIMITER ;
+mysql> CALL updateSalaryByWorkingDays(2);
++----------+--------------+------------+----------------+
+| emp_name | working_days | old_salary | updated_salary |
++----------+--------------+------------+----------------+
+| Sohail   |          854 |   92000.00 |      110400.00 |
++----------+--------------+------------+----------------+
+1 row in set (0.03 sec)
+
+Query OK, 0 rows affected (0.05 sec)
+
+mysql> SELECT emp_id, emp_name, salary FROM emp1 ORDER BY emp_id;
++--------+----------+-----------+
+| emp_id | emp_name | salary    |
++--------+----------+-----------+
+|      1 | Muskan   |  85000.00 |
+|      2 | Sohail   | 110400.00 |
+|      3 | Riya     |  88000.00 |
+|      4 | Amit     |  70000.00 |
+|      5 | Rahul    |  78000.00 |
+|      6 | Tina     |  95000.00 |
+|      7 | Sana     |  98000.00 |
+|      8 | Anil     |  74000.00 |
+|      9 | Nisha    |  90000.00 |
+|     10 | Karan    |  65000.00 |
+|     11 | Ramesh   |  60000.00 |
+|     12 | Priya    |  70000.00 |
+|     13 | Vikas    |  72000.00 |
+|     14 | Neha     |  68000.00 |
+|     15 | Arjun    |  94000.00 |
++--------+----------+-----------+
+15 rows in set (0.00 sec)
