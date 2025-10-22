@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Form Validation Example</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      padding: 30px;
+    }
+    form {
+      background-color: white;
+      width: 400px;
+      margin: auto;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px gray;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input[type="text"], input[type="email"], input[type="password"] {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      box-sizing: border-box;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    .error {
+      color: red;
+      font-size: 13px;
+    }
+    .btn {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      margin-top: 15px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+
+  <form id="userForm" onsubmit="return validateForm()">
+    <h2>Registration Form</h2>
+
+    <label>First Name:</label>
+    <input type="text" id="fname">
+    <span class="error" id="fnameError"></span>
+
+    <label>Last Name:</label>
+    <input type="text" id="lname">
+    <span class="error" id="lnameError"></span>
+
+    <label>Email:</label>
+    <input type="text" id="email">
+    <span class="error" id="emailError"></span>
+
+    <label>User ID:</label>
+    <input type="text" id="userid">
+    <span class="error" id="useridError"></span>
+
+    <label>Password:</label>
+    <input type="password" id="password">
+    <span class="error" id="passwordError"></span>
+
+    <label>Confirm Password:</label>
+    <input type="password" id="confirmPassword">
+    <span class="error" id="confirmError"></span>
+
+    <button type="submit" class="btn">Submit</button>
+  </form>
+
+  <script>
+    function validateForm() {
+      let valid = true;
+
+      // Clear all previous error messages
+      document.querySelectorAll(".error").forEach(e => e.innerHTML = "");
+
+      // Get field values
+      let fname = document.getElementById("fname").value.trim();
+      let lname = document.getElementById("lname").value.trim();
+      let email = document.getElementById("email").value.trim();
+      let userid = document.getElementById("userid").value.trim();
+      let password = document.getElementById("password").value.trim();
+      let confirmPassword = document.getElementById("confirmPassword").value.trim();
+
+      // Validate First Name
+      if (fname === "") {
+        document.getElementById("fnameError").innerHTML = "First name is required";
+        valid = false;
+      }
+
+      // Validate Last Name
+      if (lname === "") {
+        document.getElementById("lnameError").innerHTML = "Last name is required";
+        valid = false;
+      }
+
+      // Validate Email
+      if (email === "") {
+        document.getElementById("emailError").innerHTML = "Email is required";
+        valid = false;
+      } else {
+        let emailPattern = /^[^ ]+@[^ ]+\.[a-z]{2,3}$/;
+        if (!emailPattern.test(email)) {
+          document.getElementById("emailError").innerHTML = "Enter a valid email (e.g. user@example.com)";
+          valid = false;
+        }
+      }
+
+      // Validate User ID
+      if (userid === "") {
+        document.getElementById("useridError").innerHTML = "User ID is required";
+        valid = false;
+      }
+
+      // Validate Password
+      if (password === "") {
+        document.getElementById("passwordError").innerHTML = "Password is required";
+        valid = false;
+      }
+
+      // Validate Confirm Password
+      if (confirmPassword === "") {
+        document.getElementById("confirmError").innerHTML = "Please confirm your password";
+        valid = false;
+      } else if (password !== confirmPassword) {
+        document.getElementById("confirmError").innerHTML = "Passwords do not match";
+        valid = false;
+      }
+
+      return valid;
+    }
+  </script>
+
+</body>
+</html>
